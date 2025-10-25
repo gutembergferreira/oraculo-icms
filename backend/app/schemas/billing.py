@@ -1,0 +1,14 @@
+from app.schemas.base import OraculoBaseModel
+
+
+class CheckoutSessionRequest(OraculoBaseModel):
+    org_id: int
+    plan_code: str
+
+
+class CheckoutSessionResponse(OraculoBaseModel):
+    checkout_url: str
+
+
+class PortalSessionResponse(OraculoBaseModel):
+    portal_url: str

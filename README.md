@@ -16,7 +16,7 @@ O projeto "Oráculo ICMS" é uma solução completa para ingestão, análise e a
 ### Roadmap Interno
 
 - **v0.1**: Upload/parse/consulta.
-- **v0.2**: Auditoria baseline + relatórios.
+- **v0.2**: Auditoria baseline consolidada, relatórios PDF/XLSX e painel de indicadores.
 - **v0.3**: Planos/Stripe.
 - **v0.4**: Editor de regras (DSL) e ZFM pack.
 - **v1.0**: API pública + MinIO + SSO opcional.
@@ -40,7 +40,8 @@ O projeto "Oráculo ICMS" é uma solução completa para ingestão, análise e a
 1. O front-end envia um XML individual para `POST /api/v1/orgs/{org_id}/uploads/xml` ou um ZIP para `POST /api/v1/orgs/{org_id}/uploads/zip`.
 2. O `InvoiceIngestor` grava o arquivo, parseia via `XMLParser` e registra a nota fiscal e seus itens.
 3. O `ZFMAuditCalculator` executa as regras herdadas do zfm-calculator e persiste os achados na tabela `audit_findings`, vinculados a um `audit_run` multi-tenant.
-4. A listagem/detalhe de notas (`GET /api/v1/orgs/{org_id}/invoices`) e o painel de auditorias (`GET /api/v1/orgs/{org_id}/audits`) consomem diretamente essas entidades.
+4. O `AuditSummaryBuilder` agrega gravidade, recorrência e metadados de cada auditoria (baseline) e expõe em `GET /api/v1/orgs/{org_id}/audits/baseline/summary`.
+5. A listagem/detalhe de notas (`GET /api/v1/orgs/{org_id}/invoices`) e o painel de auditorias (`GET /api/v1/orgs/{org_id}/audits`) consomem diretamente essas entidades, oferecendo download de relatórios PDF/XLSX por `GET /api/v1/orgs/{org_id}/audits/{audit_id}/reports/{pdf|xlsx}`.
 
 ## Comandos úteis
 

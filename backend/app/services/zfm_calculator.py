@@ -133,12 +133,5 @@ class ZFMAuditCalculator:
             session.add(finding)
             findings.append(finding)
 
-        audit_run.summary = {
-            'invoice_id': invoice.id,
-            'total_findings': len(findings),
-            'rules': [result.rule_id for result in results],
-        }
-        audit_run.status = AuditStatus.DONE
-        audit_run.finished_at = datetime.utcnow()
         session.flush()
         return findings

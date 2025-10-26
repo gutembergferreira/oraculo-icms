@@ -3,7 +3,6 @@ from __future__ import annotations
 import zipfile
 from datetime import datetime
 from pathlib import Path
-import zipfile
 
 from celery import shared_task
 from sqlalchemy.orm import Session
@@ -15,6 +14,8 @@ from app.models.invoice import Invoice
 from app.models.org_setting import OrgSetting
 from app.services.invoice_ingestion import InvoiceIngestor
 from app.services.zfm_calculator import ZFMAuditCalculator
+from app.services.audit_summary import AuditSummaryBuilder
+from app.services.audit_report import AuditReportBuilder
 
 
 def _get_session() -> Session:
@@ -75,12 +76,20 @@ def parse_xml_batch(
                 processed += 1
                 total_findings += len(findings)
 
-        audit_run.summary = {
-            'source': 'zip_batch',
-            'file_id': raw_file_id,
-            'processed_invoices': processed,
-            'total_findings': total_findings,
-        }
+        metadata = dict((audit_run.summary or {}).get('metadata') or {})
+        metadata.update(
+            {
+                'source': 'zip_batch',
+                'file_id': raw_file_id,
+                'file_name': raw_file.file_name,
+            }
+        )
+        summary_builder = AuditSummaryBuilder(session)
+        audit_run.summary = summary_builder.build(
+            audit_run,
+            processed_invoices=processed,
+            existing_summary={**(audit_run.summary or {}), 'metadata': metadata},
+        )
         audit_run.status = AuditStatus.DONE
         audit_run.finished_at = datetime.utcnow()
         session.commit()
@@ -132,10 +141,12 @@ def run_audit(audit_run_id: int, invoice_ids: list[int] | None = None) -> dict:
             total_findings += len(findings)
             processed += 1
 
-        audit_run.summary = {
-            'processed_invoices': processed,
-            'total_findings': total_findings,
-        }
+        summary_builder = AuditSummaryBuilder(session)
+        audit_run.summary = summary_builder.build(
+            audit_run,
+            processed_invoices=processed,
+            existing_summary=audit_run.summary,
+        )
         audit_run.status = AuditStatus.DONE
         audit_run.finished_at = datetime.utcnow()
         session.commit()
@@ -159,12 +170,34 @@ def run_audit(audit_run_id: int, invoice_ids: list[int] | None = None) -> dict:
 
 @shared_task
 def generate_report_pdf(audit_id: int) -> dict:
-    return {'audit_id': audit_id, 'report': 'pdf'}
+    session = _get_session()
+    try:
+        audit = session.get(AuditRun, audit_id)
+        if not audit:
+            raise ValueError('Audit run not found')
+        builder = AuditReportBuilder(session)
+        pdf_bytes = builder.generate_pdf(audit)
+        builder.register_download(audit_run=audit, user=None, file_format='pdf')
+        session.commit()
+        return {'audit_id': audit_id, 'size_bytes': len(pdf_bytes)}
+    finally:
+        session.close()
 
 
 @shared_task
 def generate_report_xlsx(audit_id: int) -> dict:
-    return {'audit_id': audit_id, 'report': 'xlsx'}
+    session = _get_session()
+    try:
+        audit = session.get(AuditRun, audit_id)
+        if not audit:
+            raise ValueError('Audit run not found')
+        builder = AuditReportBuilder(session)
+        xlsx_bytes = builder.generate_xlsx(audit)
+        builder.register_download(audit_run=audit, user=None, file_format='xlsx')
+        session.commit()
+        return {'audit_id': audit_id, 'size_bytes': len(xlsx_bytes)}
+    finally:
+        session.close()
 
 
 @shared_task

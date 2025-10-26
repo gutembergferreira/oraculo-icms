@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -9,6 +10,7 @@ from app.api.deps import get_current_user, get_db_session
 from app.models.audit_run import AuditRun, AuditStatus
 from app.services.invoice_ingestion import InvoiceIngestor
 from app.services.zfm_calculator import ZFMAuditCalculator
+from app.services.audit_summary import AuditSummaryBuilder, initialize_summary
 from app.workers.tasks import parse_xml_batch
 
 router = APIRouter()
@@ -38,17 +40,28 @@ async def upload_xml(
         uploaded_by=current_user.id,
     )
 
+    metadata = {'source': 'single_xml', 'file_name': file.filename}
     audit_run = AuditRun(
         org_id=org_id,
         requested_by=current_user.id,
         status=AuditStatus.PENDING,
-        summary={'source': 'single_xml', 'file_name': file.filename},
+        summary=initialize_summary(metadata),
     )
     db.add(audit_run)
     db.flush()
 
     calculator = ZFMAuditCalculator()
     findings = calculator.persist_results(session=db, audit_run=audit_run, invoice=result.invoice)
+    metadata = dict(audit_run.summary.get('metadata') if audit_run.summary else {})
+    metadata.update({'invoice_id': result.invoice.id})
+    summary_builder = AuditSummaryBuilder(db)
+    audit_run.summary = summary_builder.build(
+        audit_run,
+        processed_invoices=1,
+        existing_summary={**(audit_run.summary or {}), 'metadata': metadata},
+    )
+    audit_run.status = AuditStatus.DONE
+    audit_run.finished_at = datetime.utcnow()
     db.commit()
 
     return {
@@ -87,7 +100,9 @@ async def upload_zip(
         org_id=org_id,
         requested_by=current_user.id,
         status=AuditStatus.PENDING,
-        summary={'source': 'zip_batch', 'file_id': stored_file.id, 'file_name': file.filename},
+        summary=initialize_summary(
+            {'source': 'zip_batch', 'file_id': stored_file.id, 'file_name': file.filename}
+        ),
     )
     db.add(audit_run)
     db.flush()

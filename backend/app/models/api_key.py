@@ -25,4 +25,4 @@ class ApiKey(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    organization: Mapped["Organization"] = relationship("Organization", back_populates="api_keys")
+    organization: Mapped[Organization] = relationship("Organization", back_populates="api_keys")

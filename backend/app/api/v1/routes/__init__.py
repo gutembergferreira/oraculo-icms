@@ -10,6 +10,8 @@ from . import (
     health,
     uploads,
     rules,
+    admin,
+    public_api,
 )
 
 api_router = APIRouter()
@@ -22,3 +24,5 @@ api_router.include_router(audits.router, prefix="/orgs", tags=["Auditorias"])
 api_router.include_router(uploads.router, prefix="/orgs", tags=["Uploads"])
 api_router.include_router(rules.router, prefix="/rules", tags=["Regras"])
 api_router.include_router(health.router, tags=["Sistema"])
+api_router.include_router(admin.router, prefix="/admin", tags=["Administração"])
+api_router.include_router(public_api.router, prefix="/public-api", tags=["API Pública"])

@@ -32,3 +32,6 @@ class Organization(Base):
     audit_runs: Mapped[list["AuditRun"]] = relationship(
         "AuditRun", back_populates="organization"
     )
+    api_keys: Mapped[list["ApiKey"]] = relationship(
+        "ApiKey", back_populates="organization"
+    )

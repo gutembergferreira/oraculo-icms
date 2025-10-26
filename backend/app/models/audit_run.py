@@ -21,6 +21,7 @@ class AuditRun(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     org_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     started_at: Mapped[datetime | None] = mapped_column()
     finished_at: Mapped[datetime | None] = mapped_column()
     ruleset_id: Mapped[int | None] = mapped_column(ForeignKey("rulesets.id"))

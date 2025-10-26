@@ -9,10 +9,10 @@ from typing import Iterable
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.models.file import File
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
+from app.services.storage import get_storage_backend
 from app.utils.xml_parser import ParsedInvoice, ParsedInvoiceItem, XMLParser
 
 
@@ -25,9 +25,9 @@ class IngestionResult:
 class InvoiceIngestor:
     """Serviço responsável por armazenar e transformar XMLs de NF-e."""
 
-    def __init__(self, parser: XMLParser | None = None, base_path: Path | None = None) -> None:
+    def __init__(self, parser: XMLParser | None = None) -> None:
         self.parser = parser or XMLParser()
-        self.base_path = base_path or Path(settings.local_storage_path)
+        self.storage = get_storage_backend()
 
     # ------------------------------------------------------------------
     def store_file(
@@ -40,13 +40,12 @@ class InvoiceIngestor:
         mime: str,
         uploaded_by: int | None,
     ) -> File:
-        target_dir = self.base_path / str(org_id)
-        target_dir.mkdir(parents=True, exist_ok=True)
-
-        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
-        safe_name = file_name.replace('/', '_')
-        disk_path = target_dir / f"{timestamp}_{safe_name}"
-        disk_path.write_bytes(payload)
+        stored = self.storage.store(
+            org_id=org_id,
+            file_name=file_name,
+            content=payload,
+            content_type=mime,
+        )
 
         sha256 = hashlib.sha256(payload).hexdigest()
         file = File(
@@ -54,8 +53,8 @@ class InvoiceIngestor:
             file_name=file_name,
             mime=mime,
             size_bytes=len(payload),
-            storage_backend=settings.storage_backend,
-            storage_path=str(disk_path),
+            storage_backend=self.storage.name,
+            storage_path=stored.path,
             sha256=sha256,
             uploaded_by=uploaded_by,
         )

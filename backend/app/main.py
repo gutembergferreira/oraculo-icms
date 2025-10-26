@@ -7,7 +7,7 @@ from starlette.responses import JSONResponse, Response
 
 from app.api.v1.routes import api_router
 from app.core.config import settings
-from app.logging import setup_logging
+from app.app_logging import setup_logging
 
 REQUEST_COUNT = Counter(
     "api_requests_total", "Total de requisições recebidas", ["method", "endpoint", "status"]

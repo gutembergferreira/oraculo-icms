@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, ForeignKey, String
@@ -18,8 +19,8 @@ class RuleSet(Base):
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
-    organization: Mapped["Organization" | None] = relationship("Organization")
-    creator: Mapped["User" | None] = relationship("User")
+    organization: Mapped[Organization | None] = relationship("Organization")
+    creator: Mapped[User | None] = relationship("User")
     audit_runs: Mapped[list["AuditRun"]] = relationship(
         "AuditRun", back_populates="ruleset"
     )

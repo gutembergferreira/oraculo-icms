@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 from sqlalchemy import JSON, ForeignKey, String
@@ -19,4 +21,4 @@ class AuditLog(Base):
     ip: Mapped[str | None] = mapped_column(String(45))
     meta: Mapped[dict] = mapped_column(JSON, default=dict)
 
-    user: Mapped["User" | None] = relationship("User", back_populates="audit_logs")
+    user: Mapped[User | None] = relationship("User", back_populates="audit_logs")

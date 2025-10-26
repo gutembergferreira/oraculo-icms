@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Backend FastAPI para a plataforma Oráculo ICMS"
 authors = ["Equipe Oráculo <devs@oraculo.app>"]
 license = "MIT"
-readme = "../README.md"
+
 packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import JSON, ForeignKey, String
@@ -20,7 +21,7 @@ class OrgSetting(Base):
     legal_consent_at: Mapped[datetime | None] = mapped_column()
     flags: Mapped[dict] = mapped_column(JSON, default=dict)
 
-    organization: Mapped["Organization"] = relationship(
+    organization: Mapped[Organization] = relationship(
         "Organization", back_populates="settings"
     )
-    plan: Mapped["Plan"] = relationship("Plan")
+    plan: Mapped[Plan] = relationship("Plan")

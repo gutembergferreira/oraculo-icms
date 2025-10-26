@@ -1,7 +1,9 @@
+from __future__ import annotations
 from sqlalchemy import JSON, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
+from app.models.invoice import Invoice  # <- precisa importar o tipo real
 
 
 class InvoiceItem(Base):
@@ -27,4 +29,4 @@ class InvoiceItem(Base):
     icms_st_value: Mapped[float | None] = mapped_column(Numeric(14, 2))
     other_taxes: Mapped[dict] = mapped_column(JSON, default=dict)
 
-    invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="items")
+    invoice: Mapped[Invoice] = relationship("Invoice", back_populates="items")

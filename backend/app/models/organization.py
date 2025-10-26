@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import String
@@ -22,7 +23,7 @@ class Organization(Base):
     users: Mapped[list["UserOrgRole"]] = relationship(
         "UserOrgRole", back_populates="organization"
     )
-    settings: Mapped["OrgSetting"] = relationship(
+    settings: Mapped[OrgSetting] = relationship(
         "OrgSetting", back_populates="organization", uselist=False
     )
     invoices: Mapped[list["Invoice"]] = relationship(

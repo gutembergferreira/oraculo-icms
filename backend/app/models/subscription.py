@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String
@@ -21,5 +22,5 @@ class Subscription(Base):
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    organization: Mapped["Organization"] = relationship("Organization", back_populates="subscriptions")
-    plan: Mapped["Plan"] = relationship("Plan", back_populates="subscriptions")
+    organization: Mapped[Organization] = relationship("Organization", back_populates="subscriptions")
+    plan: Mapped[Plan] = relationship("Plan", back_populates="subscriptions")

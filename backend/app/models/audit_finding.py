@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import JSON, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -19,10 +21,10 @@ class AuditFinding(Base):
     references: Mapped[list[str] | None] = mapped_column(JSON)
     evidence: Mapped[dict] = mapped_column(JSON, default=dict)
 
-    audit_run: Mapped["AuditRun"] = relationship(
+    audit_run: Mapped[AuditRun] = relationship(
         "AuditRun", back_populates="findings"
     )
-    invoice: Mapped["Invoice"] = relationship(
+    invoice: Mapped[Invoice] = relationship(
         "Invoice", back_populates="findings"
     )
-    item: Mapped["InvoiceItem" | None] = relationship("InvoiceItem")
+    item: Mapped[InvoiceItem | None] = relationship("InvoiceItem")

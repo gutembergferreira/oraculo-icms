@@ -1,3 +1,4 @@
+from __future__ import annotations
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,7 +16,7 @@ class UserOrgRole(Base):
     )
     role: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    user: Mapped["User"] = relationship("User", back_populates="roles")
-    organization: Mapped["Organization"] = relationship(
+    user: Mapped[User] = relationship("User", back_populates="roles")
+    organization: Mapped[Organization] = relationship(
         "Organization", back_populates="users"
     )

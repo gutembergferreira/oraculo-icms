@@ -1,9 +1,11 @@
+from __future__ import annotations
 from datetime import date, datetime
 
 from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
+from app.models.file import File  # <- precisa importar o tipo real
 
 
 class Invoice(Base):
@@ -24,10 +26,10 @@ class Invoice(Base):
     parsed_at: Mapped[datetime | None] = mapped_column()
     indexed_at: Mapped[datetime | None] = mapped_column()
 
-    organization: Mapped["Organization"] = relationship(
+    organization: Mapped[Organization] = relationship(
         "Organization", back_populates="invoices"
     )
-    file: Mapped["File" | None] = relationship("File")
+    file: Mapped[File | None] = relationship("File")
     items: Mapped[list["InvoiceItem"]] = relationship(
         "InvoiceItem", back_populates="invoice", cascade="all, delete-orphan"
     )

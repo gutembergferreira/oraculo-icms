@@ -16,6 +16,7 @@ from app.services.invoice_ingestion import InvoiceIngestor
 from app.services.zfm_calculator import ZFMAuditCalculator
 from app.services.audit_summary import AuditSummaryBuilder
 from app.services.audit_report import AuditReportBuilder
+from app.services.org_plan_limits import OrgPlanLimiter, PlanLimitError
 
 
 def _get_session() -> Session:
@@ -50,6 +51,7 @@ def parse_xml_batch(
         session.flush()
 
         ingestor = InvoiceIngestor()
+        limiter = OrgPlanLimiter(session)
         calculator = ZFMAuditCalculator()
         processed = 0
         total_findings = 0
@@ -59,6 +61,10 @@ def parse_xml_batch(
                 if info.is_dir() or not info.filename.lower().endswith('.xml'):
                     continue
                 payload = archive.read(info)
+                try:
+                    setting = limiter.ensure_upload_quota(org_id, new_files=1)
+                except PlanLimitError as exc:
+                    raise ValueError(exc.message) from exc
                 ingest_result = ingestor.ingest_invoice(
                     session=session,
                     org_id=org_id,
@@ -73,6 +79,7 @@ def parse_xml_batch(
                     audit_run=audit_run,
                     invoice=ingest_result.invoice,
                 )
+                limiter.register_usage(setting, uploaded_files=1)
                 processed += 1
                 total_findings += len(findings)
 

@@ -18,6 +18,7 @@ from app.main import app
 from app.models.organization import Organization
 from app.models.org_setting import OrgSetting
 from app.models.plan import Plan
+from app.models.subscription import Subscription
 from app.models.user import User
 from app.models.user_org_role import UserOrgRole
 
@@ -58,16 +59,40 @@ def session(engine, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture()
 def seed_data(session):
-    plan = Plan(code="basic", name="Basic", monthly_price_cents=0)
-    session.add(plan)
+    plan_free = Plan(
+        code="FREE",
+        name="Free",
+        monthly_price_cents=0,
+        features={"exports_pdf": False, "exports_xlsx": False},
+        limits={"max_xml_uploads_month": 100, "max_storage_mb": 256, "max_users": 3},
+    )
+    plan_pro = Plan(
+        code="PRO",
+        name="Pro",
+        monthly_price_cents=49900,
+        features={"exports_pdf": True, "exports_xlsx": True},
+        limits={"max_xml_uploads_month": 1000, "max_storage_mb": 4096, "max_users": 10},
+        stripe_product_id="prod_test_pro",
+        stripe_price_id="price_test_pro",
+    )
+    session.add_all([plan_free, plan_pro])
     session.flush()
 
     org = Organization(name="Org Teste", slug="org-teste", cnpj="12345678000199")
     session.add(org)
     session.flush()
 
-    setting = OrgSetting(id=org.id, org_id=org.id, current_plan_id=plan.id)
+    setting = OrgSetting(
+        id=org.id,
+        org_id=org.id,
+        current_plan_id=plan_free.id,
+        plan_limits=plan_free.limits,
+        plan_features=plan_free.features,
+    )
     session.add(setting)
+
+    subscription = Subscription(org_id=org.id, plan_id=plan_free.id, status="active")
+    session.add(subscription)
 
     user = User(
         email="user@example.com",

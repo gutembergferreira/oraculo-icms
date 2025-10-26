@@ -10,7 +10,12 @@ from .audit import (
     AuditTopRule,
 )
 from .organization import OrganizationCreate, OrganizationRead
-from .billing import CheckoutSessionRequest, CheckoutSessionResponse, PortalSessionResponse
+from .billing import (
+    CheckoutSessionRequest,
+    CheckoutSessionResponse,
+    PortalSessionRequest,
+    PortalSessionResponse,
+)
 
 __all__ = [
     "UserCreate",
@@ -29,5 +34,6 @@ __all__ = [
     "OrganizationRead",
     "CheckoutSessionRequest",
     "CheckoutSessionResponse",
+    "PortalSessionRequest",
     "PortalSessionResponse",
 ]

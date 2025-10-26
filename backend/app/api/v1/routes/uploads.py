@@ -11,6 +11,7 @@ from app.models.audit_run import AuditRun, AuditStatus
 from app.services.invoice_ingestion import InvoiceIngestor
 from app.services.zfm_calculator import ZFMAuditCalculator
 from app.services.audit_summary import AuditSummaryBuilder, initialize_summary
+from app.services.org_plan_limits import OrgPlanLimiter, PlanLimitError
 from app.workers.tasks import parse_xml_batch
 
 router = APIRouter()
@@ -30,6 +31,14 @@ async def upload_xml(
     if not payload:
         raise HTTPException(status_code=400, detail='Arquivo vazio.')
 
+    limiter = OrgPlanLimiter(db)
+    try:
+        setting = limiter.ensure_upload_quota(
+            org_id, new_files=1, new_bytes=len(payload)
+        )
+    except PlanLimitError as exc:
+        raise HTTPException(status_code=403, detail=exc.message) from exc
+
     ingestor = InvoiceIngestor()
     result = ingestor.ingest_invoice(
         session=db,
@@ -39,6 +48,8 @@ async def upload_xml(
         mime=file.content_type or 'application/xml',
         uploaded_by=current_user.id,
     )
+
+    limiter.register_usage(setting, uploaded_files=1, added_bytes=len(payload))
 
     metadata = {'source': 'single_xml', 'file_name': file.filename}
     audit_run = AuditRun(
@@ -86,6 +97,14 @@ async def upload_zip(
     if not payload:
         raise HTTPException(status_code=400, detail='Arquivo vazio.')
 
+    limiter = OrgPlanLimiter(db)
+    try:
+        setting = limiter.ensure_upload_quota(
+            org_id, new_bytes=len(payload)
+        )
+    except PlanLimitError as exc:
+        raise HTTPException(status_code=403, detail=exc.message) from exc
+
     ingestor = InvoiceIngestor()
     stored_file = ingestor.store_file(
         session=db,
@@ -95,6 +114,8 @@ async def upload_zip(
         mime=file.content_type or 'application/zip',
         uploaded_by=current_user.id,
     )
+
+    limiter.register_usage(setting, added_bytes=len(payload))
 
     audit_run = AuditRun(
         org_id=org_id,

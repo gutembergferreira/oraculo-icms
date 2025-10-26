@@ -43,6 +43,13 @@ O projeto "Oráculo ICMS" é uma solução completa para ingestão, análise e a
 4. O `AuditSummaryBuilder` agrega gravidade, recorrência e metadados de cada auditoria (baseline) e expõe em `GET /api/v1/orgs/{org_id}/audits/baseline/summary`.
 5. A listagem/detalhe de notas (`GET /api/v1/orgs/{org_id}/invoices`) e o painel de auditorias (`GET /api/v1/orgs/{org_id}/audits`) consomem diretamente essas entidades, oferecendo download de relatórios PDF/XLSX por `GET /api/v1/orgs/{org_id}/audits/{audit_id}/reports/{pdf|xlsx}`.
 
+## Cobrança recorrente e limites de plano
+
+- Os planos **Free**, **Pro**, **Business** e **Enterprise** são sincronizados com o Stripe via catálogo em `app/services/plan_catalog.py`. Cada plano define limites (XML/mês, armazenamento em MB e número de usuários) e recursos habilitados (exportações, DSL, suporte).
+- Durante o seed (`poetry run python -m app.cli`) os planos são criados na base local; execute `StripeBillingService.sync_plan_catalog()` (via shell ou tarefa dedicada) quando quiser gerar/atualizar produtos e preços no Stripe usando as variáveis `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`.
+- O endpoint `POST /api/v1/billing/create-checkout-session` cria a sessão de assinatura no Stripe e associa a organização ao plano escolhido. O webhook (`POST /api/v1/billing/webhook`) reage a `checkout.session.completed`, `customer.subscription.updated/deleted` e `invoice.payment_failed`, atualizando automaticamente `subscriptions` e `org_settings`.
+- Os limites são aplicados no momento do upload: `OrgPlanLimiter` bloqueia excesso de XMLs mensais ou armazenamento, registrando consumo em `org_settings`. Para lotes ZIP o mesmo verificador atua dentro da tarefa Celery, evitando que o lote avance quando a cota é ultrapassada.
+
 ## Comandos úteis
 
 - `cd backend && poetry install && poetry run pytest` — executa a suíte de testes (unitários e integração do fluxo de upload → auditoria).

@@ -23,4 +23,4 @@ class Page(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
-    updated_by: Mapped[User | None] = relationship("User")
+    updated_by: Mapped["User" | None] = relationship("User")

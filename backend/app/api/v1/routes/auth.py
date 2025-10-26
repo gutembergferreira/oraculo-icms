@@ -58,7 +58,12 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db_session)) ->
                     org_id=org.id,
                     current_plan_id=free_plan.id,
                     billing_email=payload.email,
-                    flags={"exports_pdf": False, "exports_xlsx": False},
+                    plan_limits=free_plan.limits or {},
+                    plan_features=free_plan.features or {},
+                    flags={
+                        **{k: bool(v) for k, v in (free_plan.features or {}).items()},
+                        "plan_code": free_plan.code,
+                    },
                 )
             )
         db.add(UserOrgRole(user_id=user.id, org_id=org.id, role="admin_empresa"))

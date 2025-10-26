@@ -1,0 +1,62 @@
+name: "Pacote ZFM"
+version: "2024.04"
+metadata:
+  origem: "oraculo-icms"
+  categoria: "zfm"
+rules:
+  - id: "ZFM-TOTAL-001"
+    name: "Divergência de total da NF-e"
+    scope: "invoice"
+    when:
+      all:
+        - helpers.total_variance() > 0.1
+    then:
+      inconsistency_code: "TOTAL_DIVERGENTE"
+      severity: "alto"
+      message_pt: "Valor total da nota difere da soma dos itens e frete."
+      suggestion_code: "REGULARIZAR_TOTAIS"
+      references:
+        - "Manual Prático NF-e"
+      evidence:
+        variacao: helpers.total_variance()
+        soma_itens: helpers.items_sum("total_value")
+        frete: helpers.value_or(invoice.freight_value, 0)
+        total_xml: helpers.value_or(invoice.total_value, 0)
+  - id: "ZFM-ST-001"
+    name: "Item interestadual sem ST destacado"
+    scope: "item"
+    when:
+      all:
+        - invoice.uf == "AM"
+        - invoice.has_st is False
+        - item.cfop is not None and item.cfop.startswith("6")
+        - item.cst in ["10", "60", "70"]
+        - helpers.value_or(item.icms_st_value, 0) == 0
+    then:
+      inconsistency_code: "ST_NAO_RECOLHIDO"
+      severity: "medio"
+      message_pt: "Item com CFOP interestadual para AM sem destaque de ST."
+      suggestion_code: "REGULARIZAR_ST"
+      references:
+        - "Convênio ICMS 142/2018"
+      evidence:
+        cfop: item.cfop
+        cst: item.cst
+        valor_icms_st: helpers.value_or(item.icms_st_value, 0)
+  - id: "ZFM-CEST-001"
+    name: "NCM com CEST obrigatório ausente"
+    scope: "item"
+    when:
+      all:
+        - item.ncm is not None
+        - item.ncm in ["22030000", "33030010"]
+        - not item.cest
+    then:
+      inconsistency_code: "CEST_OBRIGATORIO"
+      severity: "baixo"
+      message_pt: "Item com NCM sujeito a CEST sem informação correspondente."
+      suggestion_code: "INFORMAR_CEST"
+      references:
+        - "Convênio ICMS 60/07"
+      evidence:
+        ncm: item.ncm

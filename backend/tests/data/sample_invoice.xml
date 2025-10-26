@@ -1,16 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
   <NFe>
-    <infNFe>
+    <infNFe Id="NFe35181111111111111111550010000001231000001234">
       <ide>
         <cNF>12345678</cNF>
+        <mod>55</mod>
+        <serie>1</serie>
+        <nNF>1234</nNF>
+        <dhEmi>2024-01-05T10:30:00-03:00</dhEmi>
+        <UF>SP</UF>
       </ide>
       <emit>
         <CNPJ>12345678000100</CNPJ>
       </emit>
       <dest>
         <CNPJ>00987654000191</CNPJ>
+        <UF>AM</UF>
       </dest>
+      <det nItem="1">
+        <prod>
+          <cProd>001</cProd>
+          <xProd>Produto Interestadual</xProd>
+          <NCM>22030000</NCM>
+          <CFOP>6102</CFOP>
+          <qCom>10</qCom>
+          <vUnCom>5.00</vUnCom>
+          <vProd>50.00</vProd>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS00>
+              <orig>0</orig>
+              <CST>00</CST>
+              <vBC>50.00</vBC>
+              <vICMS>9.00</vICMS>
+            </ICMS00>
+          </ICMS>
+        </imposto>
+      </det>
+      <det nItem="2">
+        <prod>
+          <cProd>002</cProd>
+          <xProd>Cosmético sem CEST</xProd>
+          <NCM>33030010</NCM>
+          <CFOP>6101</CFOP>
+          <qCom>5</qCom>
+          <vUnCom>6.00</vUnCom>
+          <vProd>30.00</vProd>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS60>
+              <orig>0</orig>
+              <CST>60</CST>
+              <vBCSTRet>0.00</vBCSTRet>
+              <vICMSSTRet>0.00</vICMSSTRet>
+            </ICMS60>
+          </ICMS>
+        </imposto>
+      </det>
+      <total>
+        <ICMSTot>
+          <vBC>80.00</vBC>
+          <vICMS>9.00</vICMS>
+          <vST>0.00</vST>
+          <vFrete>5.00</vFrete>
+          <vNF>95.00</vNF>
+        </ICMSTot>
+      </total>
     </infNFe>
   </NFe>
 </nfeProc>

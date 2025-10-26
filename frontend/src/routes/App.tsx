@@ -4,6 +4,7 @@ import DashboardPage from "../pages/DashboardPage";
 import InvoicesPage from "../pages/InvoicesPage";
 import AuditPage from "../pages/AuditPage";
 import BillingPage from "../pages/BillingPage";
+import RulesPage from "../pages/RulesPage";
 import LoginPage from "../pages/LoginPage";
 import Layout from "../layouts/AppLayout";
 
@@ -17,6 +18,7 @@ const App = () => {
         <Route path="/invoices" element={<InvoicesPage />} />
         <Route path="/audits" element={<AuditPage />} />
         <Route path="/billing" element={<BillingPage />} />
+        <Route path="/rules" element={<RulesPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

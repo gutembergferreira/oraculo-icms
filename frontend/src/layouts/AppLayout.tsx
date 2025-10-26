@@ -4,7 +4,8 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/invoices", label: "Notas" },
   { to: "/audits", label: "Auditorias" },
-  { to: "/billing", label: "Planos" }
+  { to: "/billing", label: "Planos" },
+  { to: "/rules", label: "Regras" }
 ];
 
 const AppLayout = () => {

@@ -15,6 +15,7 @@ from app.db import session as db_session
 from app.db.base_class import Base
 import app.db.base  # noqa: F401
 from app.main import app
+from app.db.seeds import seed_all
 from app.models.organization import Organization
 from app.models.org_setting import OrgSetting
 from app.models.plan import Plan
@@ -59,24 +60,18 @@ def session(engine, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture()
 def seed_data(session):
-    plan_free = Plan(
-        code="FREE",
-        name="Free",
-        monthly_price_cents=0,
-        features={"exports_pdf": False, "exports_xlsx": False},
-        limits={"max_xml_uploads_month": 100, "max_storage_mb": 256, "max_users": 3},
-    )
-    plan_pro = Plan(
-        code="PRO",
-        name="Pro",
-        monthly_price_cents=49900,
-        features={"exports_pdf": True, "exports_xlsx": True},
-        limits={"max_xml_uploads_month": 1000, "max_storage_mb": 4096, "max_users": 10},
-        stripe_product_id="prod_test_pro",
-        stripe_price_id="price_test_pro",
-    )
-    session.add_all([plan_free, plan_pro])
-    session.flush()
+    seed_all(session)
+    plan_free = session.query(Plan).filter_by(code="FREE").first()
+    plan_pro = session.query(Plan).filter_by(code="PRO").first()
+    assert plan_free is not None and plan_pro is not None
+    plan_pro.stripe_product_id = "prod_test_pro"
+    plan_pro.stripe_price_id = "price_test_pro"
+    plan_pro.limits = {
+        "max_xml_uploads_month": 1000,
+        "max_storage_mb": 4096,
+        "max_users": 10,
+    }
+    session.add(plan_pro)
 
     org = Organization(name="Org Teste", slug="org-teste", cnpj="12345678000199")
     session.add(org)

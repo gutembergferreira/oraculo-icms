@@ -33,7 +33,7 @@ def test_single_xml_upload_flow(client: TestClient, seed_data):
     assert len(detail_json["items"]) == 2
     assert len(detail_json["findings"]) >= 3
     rule_ids = {finding["rule_id"] for finding in detail_json["findings"]}
-    assert "zfm_total_mismatch" in rule_ids
+    assert "ZFM-TOTAL-001" in rule_ids
 
 
 def test_zip_upload_flow(client: TestClient, seed_data):

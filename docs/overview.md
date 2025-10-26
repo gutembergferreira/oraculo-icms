@@ -6,10 +6,11 @@ Este diretório centraliza guias para operação da plataforma Oráculo ICMS.
 
 - **Uploads**: o endpoint `POST /api/v1/orgs/{org_id}/uploads/{xml|zip}` salva os arquivos por organização utilizando `InvoiceIngestor`.
 - **Parser**: `XMLParser` transforma o XML em estruturas enriquecidas (cabeçalho, itens, tributos) reutilizadas pelo motor.
-- **Auditoria**: `ZFMAuditCalculator` aplica regras herdadas do projeto `zfm-calculator`, grava achados em `audit_findings` e atualiza o status de `audit_runs`.
+- **Auditoria**: `ZFMAuditCalculator` compõe o baseline global com o override da organização via `RuleSetService`, avalia as regras DSL com o `RuleEngine` e atualiza `audit_runs`/`audit_findings`.
+- **Editor de regras**: `GET/PUT /api/v1/rules/baseline` e `GET/PUT /api/v1/rules/orgs/{org_id}` permitem versionar o YAML (com o pacote `zfm_baseline.yaml` como ponto de partida) e visualizar o resultado efetivo aplicado às auditorias.
 - **Baseline consolidado**: o serviço `AuditSummaryBuilder` agrega gravidade, recorrência e metadados para `GET /api/v1/orgs/{org_id}/audits/baseline/summary`, usado pelo dashboard do front-end.
 - **Relatórios**: `AuditReportBuilder` gera PDF via WeasyPrint e planilhas XLSX com openpyxl por `GET /api/v1/orgs/{org_id}/audits/{audit_id}/reports/{pdf|xlsx}`.
-- **Front-end**: as páginas `InvoicesPage` e `AuditPage` consomem os novos endpoints para exibir notas, itens, achados, indicadores baseline e realizar downloads de relatórios.
+- **Front-end**: as páginas `InvoicesPage`, `AuditPage` e `RulesPage` consomem os novos endpoints para exibir notas, achados, indicadores baseline, relatórios e o editor de regras DSL.
 
 ## Planos, Stripe e enforcement de limites
 

@@ -61,8 +61,9 @@ async def upload_xml(
     db.add(audit_run)
     db.flush()
 
-    calculator = ZFMAuditCalculator()
-    findings = calculator.persist_results(session=db, audit_run=audit_run, invoice=result.invoice)
+    calculator = ZFMAuditCalculator(db, org_id)
+    calculator.bind_to_run(audit_run)
+    findings = calculator.persist_results(audit_run=audit_run, invoice=result.invoice)
     metadata = dict(audit_run.summary.get('metadata') if audit_run.summary else {})
     metadata.update({'invoice_id': result.invoice.id})
     summary_builder = AuditSummaryBuilder(db)

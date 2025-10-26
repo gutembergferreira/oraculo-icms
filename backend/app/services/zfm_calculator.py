@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable, Sequence
+from typing import Iterable
 
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
@@ -11,111 +10,49 @@ from app.models.audit_finding import AuditFinding
 from app.models.audit_run import AuditRun, AuditStatus
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
+from app.services.rules_engine import RuleEngine
+from app.services.ruleset_service import RuleSetService
 
 
-@dataclass(slots=True)
-class FindingResult:
-    rule_id: str
-    inconsistency_code: str
-    severity: str
-    message_pt: str
-    suggestion_code: str | None = None
-    references: Sequence[str] | None = None
-    item: InvoiceItem | None = None
-    evidence: dict[str, Any] | None = None
+class RuleAuditCalculator:
+    """Executa regras DSL para gerar achados de auditoria."""
 
+    def __init__(self, session: Session, org_id: int) -> None:
+        self.session = session
+        self.org_id = org_id
+        self.rulesets = RuleSetService(session)
+        self.composed = self.rulesets.compose_for_org(org_id)
+        self.engine = RuleEngine(self.composed.rules)
 
-class ZFMAuditCalculator:
-    """Motor simplificado inspirado no zfm-calculator para validações fiscais."""
+    def bind_to_run(self, audit_run: AuditRun) -> None:
+        target_ruleset = self.composed.override or self.composed.baseline
+        audit_run.ruleset_id = target_ruleset.id
+        summary = dict(audit_run.summary or {})
+        metadata = dict(summary.get("metadata") or {})
+        metadata["rules"] = self.composed.metadata["sources"]
+        summary["metadata"] = metadata
+        audit_run.summary = summary
 
-    def __init__(
-        self,
-        *,
-        cfop_requires_st: Sequence[str] | None = None,
-        ncm_requires_cest: Sequence[str] | None = None,
-    ) -> None:
-        self.cfop_requires_st = tuple(cfop_requires_st or ['6101', '6102', '6201', '6202'])
-        self.ncm_requires_cest = tuple(ncm_requires_cest or ['22030000', '33030010'])
-
-    # ------------------------------------------------------------------
-    def evaluate_invoice(self, invoice: Invoice, items: Iterable[InvoiceItem] | None = None) -> list[FindingResult]:
-        invoice_items = list(items if items is not None else invoice.items)
-        results: list[FindingResult] = []
-
-        total_items = sum(float(item.total_value or 0) for item in invoice_items)
-        freight_value = float(invoice.freight_value or 0)
-        invoice_total = float(invoice.total_value or 0)
-        if abs((total_items + freight_value) - invoice_total) > 0.1:
-            results.append(
-                FindingResult(
-                    rule_id='zfm_total_mismatch',
-                    inconsistency_code='TOTAL_DIVERGENTE',
-                    severity='alto',
-                    message_pt='Valor total da nota difere da soma de itens e frete.',
-                    evidence={
-                        'soma_itens': round(total_items, 2),
-                        'frete': round(freight_value, 2),
-                        'total_xml': round(invoice_total, 2),
-                    },
-                )
-            )
-
-        for item in invoice_items:
-            if item.cfop and any(item.cfop.startswith(prefix) for prefix in self.cfop_requires_st):
-                if not invoice.has_st and (item.icms_st_value or 0) == 0:
-                    results.append(
-                        FindingResult(
-                            rule_id='zfm_st_missing',
-                            inconsistency_code='ST_NAO_RECOLHIDO',
-                            severity='medio',
-                            message_pt='Item com CFOP interestadual sem destaque de ST.',
-                            suggestion_code='REGULARIZAR_ST',
-                            references=['LC 24/75', 'Convênio ICMS 65/88'],
-                            item=item,
-                            evidence={
-                                'cfop': item.cfop,
-                                'cst': item.cst,
-                                'valor_icms_st': float(item.icms_st_value or 0),
-                            },
-                        )
-                    )
-            if item.ncm and item.ncm in self.ncm_requires_cest and not item.cest:
-                results.append(
-                    FindingResult(
-                        rule_id='zfm_missing_cest',
-                        inconsistency_code='CEST_OBRIGATORIO',
-                        severity='baixo',
-                        message_pt='Item com NCM sujeito a CEST porém sem informação no XML.',
-                        suggestion_code='INFORMAR_CEST',
-                        references=['Convênio ICMS 60/07'],
-                        item=item,
-                        evidence={'ncm': item.ncm},
-                    )
-                )
-        return results
-
-    # ------------------------------------------------------------------
     def persist_results(
         self,
         *,
-        session: Session,
         audit_run: AuditRun,
         invoice: Invoice,
         items: Iterable[InvoiceItem] | None = None,
     ) -> list[AuditFinding]:
         audit_run.started_at = audit_run.started_at or datetime.utcnow()
         audit_run.status = AuditStatus.RUNNING
-        session.flush()
+        self.session.flush()
 
-        session.execute(
+        self.session.execute(
             delete(AuditFinding).where(
                 AuditFinding.audit_run_id == audit_run.id,
                 AuditFinding.invoice_id == invoice.id,
             )
         )
-        session.flush()
+        self.session.flush()
 
-        results = self.evaluate_invoice(invoice, items)
+        results = self.engine.evaluate(invoice=invoice, items=items or invoice.items)
         findings: list[AuditFinding] = []
         for result in results:
             finding = AuditFinding(
@@ -130,8 +67,12 @@ class ZFMAuditCalculator:
                 references=list(result.references) if result.references else None,
                 evidence=result.evidence or {},
             )
-            session.add(finding)
+            self.session.add(finding)
             findings.append(finding)
 
-        session.flush()
+        self.session.flush()
         return findings
+
+
+# Compatibilidade com código existente
+ZFMAuditCalculator = RuleAuditCalculator

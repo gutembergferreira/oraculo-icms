@@ -52,7 +52,8 @@ def parse_xml_batch(
 
         ingestor = InvoiceIngestor()
         limiter = OrgPlanLimiter(session)
-        calculator = ZFMAuditCalculator()
+        calculator = ZFMAuditCalculator(session, org_id)
+        calculator.bind_to_run(audit_run)
         processed = 0
         total_findings = 0
 
@@ -75,7 +76,6 @@ def parse_xml_batch(
                     raw_file=raw_file,
                 )
                 findings = calculator.persist_results(
-                    session=session,
                     audit_run=audit_run,
                     invoice=ingest_result.invoice,
                 )
@@ -127,7 +127,8 @@ def run_audit(audit_run_id: int, invoice_ids: list[int] | None = None) -> dict:
         if not audit_run:
             raise ValueError('Audit run not found')
 
-        calculator = ZFMAuditCalculator()
+        calculator = ZFMAuditCalculator(session, audit_run.org_id)
+        calculator.bind_to_run(audit_run)
         query = session.query(Invoice).filter(Invoice.org_id == audit_run.org_id)
         if invoice_ids:
             query = query.filter(Invoice.id.in_(invoice_ids))
@@ -141,7 +142,6 @@ def run_audit(audit_run_id: int, invoice_ids: list[int] | None = None) -> dict:
         total_findings = 0
         for invoice in invoices:
             findings = calculator.persist_results(
-                session=session,
                 audit_run=audit_run,
                 invoice=invoice,
             )

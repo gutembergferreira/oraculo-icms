@@ -16,9 +16,20 @@ class UserCreate(UserBase):
     organization_name: str | None = None
 
 
+class UserLogin(OraculoBaseModel):
+    email: EmailStr
+    password: str
+
+
+class SSOCallbackPayload(OraculoBaseModel):
+    code: str
+    state: str | None = None
+
+
 class UserRead(UserBase):
     id: int
     is_active: bool
+    is_superuser: bool
     created_at: datetime
     updated_at: datetime
 

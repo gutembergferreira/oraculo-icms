@@ -7,6 +7,7 @@ from app.api.deps import get_current_user, get_db_session
 from app.models.audit_finding import AuditFinding
 from app.models.audit_run import AuditRun, AuditStatus
 from app.schemas import AuditFindingRead, AuditRunCreate, AuditRunRead
+from app.workers.tasks import run_audit as run_audit_task
 
 router = APIRouter()
 
@@ -26,6 +27,9 @@ def run_audit(
     )
     db.add(audit)
     db.commit()
+    db.refresh(audit)
+
+    run_audit_task(audit.id)
     db.refresh(audit)
     return audit
 

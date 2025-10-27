@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from datetime import datetime
 
 from sqlalchemy import String
@@ -6,7 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
 
-
+if TYPE_CHECKING:
+    from .user_org_role import UserOrgRole
+    from .user import User
 class Organization(Base):
     __tablename__ = "organizations"
 
@@ -20,8 +24,16 @@ class Organization(Base):
     subscriptions: Mapped[list["Subscription"]] = relationship(
         "Subscription", back_populates="organization"
     )
-    users: Mapped[list["UserOrgRole"]] = relationship(
-        "UserOrgRole", back_populates="organization"
+    user_roles: Mapped[list["UserOrgRole"]] = relationship(
+        "UserOrgRole",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+    )
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        secondary="user_org_roles",
+        viewonly=True,
+        back_populates="organizations",
     )
     settings: Mapped[OrgSetting] = relationship(
         "OrgSetting", back_populates="organization", uselist=False

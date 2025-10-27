@@ -50,8 +50,10 @@ class RuleEditorPayload(BaseModel):
 
 
 class RulePackRead(BaseModel):
-    slug: str
+    code: str
     name: str
+    version: str
     description: str | None = None
-    version: str | None = None
     yaml: str
+
+    model_config = ConfigDict(from_attributes=True)

@@ -1,11 +1,16 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from datetime import datetime
-
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
 
+
+if TYPE_CHECKING:
+    # Apenas para o type checker / resolução de annotations (evita import circular)
+    from .user_org_role import UserOrgRole
+    from .organization import Organization
 
 class User(Base):
     __tablename__ = "users"
@@ -21,5 +26,16 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    roles: Mapped[list["UserOrgRole"]] = relationship("UserOrgRole", back_populates="user")
+    # coleção de vínculos User ↔ Organization via objeto de associação
+    org_roles: Mapped[list["UserOrgRole"]]= relationship(
+        "UserOrgRole",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    organizations: Mapped[list["Organization"]] = relationship(
+        "Organization",
+        secondary="user_org_roles",
+        viewonly=True,
+        back_populates="users",
+    )
     audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="user")

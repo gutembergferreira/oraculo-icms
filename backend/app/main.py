@@ -6,7 +6,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from app.api.v1.routes import api_router
-from app.core.config import settings
+from app.core.config import cors_origins, settings
 from app.app_logging import setup_logging
 
 REQUEST_COUNT = Counter(
@@ -40,14 +40,16 @@ def create_app() -> FastAPI:
         default_response_class=JSONResponse,
     )
 
-    app.add_middleware(MetricsMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.allowed_origins,
+        allow_origins=cors_origins(),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.add_middleware(MetricsMiddleware)
+    print("CORS origins efetivos:", cors_origins())
 
     app.include_router(api_router, prefix="/api/v1")
 

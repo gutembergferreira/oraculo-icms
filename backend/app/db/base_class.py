@@ -4,7 +4,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
-    id: Mapped[int]
+    pass
 
 
 class TimestampMixin:

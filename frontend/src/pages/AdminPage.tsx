@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../contexts/AuthContext";
@@ -92,11 +93,13 @@ const AdminPage = () => {
         <p className="mt-2 text-sm text-slate-600">
           Acesse rapidamente todas as áreas da plataforma.
         </p>
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {links.map((link) => (
-            <li key={link.path} className="rounded border px-4 py-2 text-sm">
-              <span className="font-medium">{link.label}</span>
-              <span className="block text-xs text-slate-500">{link.path}</span>
+            <li key={link.path} className="rounded border px-4 py-3 text-sm transition hover:border-primary">
+              <Link className="flex flex-col gap-1" to={link.path}>
+                <span className="font-medium text-primary">{link.label}</span>
+                <span className="text-xs text-slate-500">{link.path}</span>
+              </Link>
             </li>
           ))}
         </ul>

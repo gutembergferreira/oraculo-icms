@@ -3,14 +3,12 @@ from app.db import base  # noqa: F401  <-- IMPORTANTE: mantém o registro dos mo
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-import sys
-from contextlib import contextmanager
-from typing import Iterable
-
-from app.db.session import SessionLocal
+from app.core.security import get_password_hash
 from app.models.plan import Plan
-from app.models.suggestion import Suggestion
+from app.models.user import User
 from app.models.rule_reference import RuleReference
+from app.models.suggestion import Suggestion
+from app.services.page_service import PageService
 from app.services.plan_catalog import iter_seed_plans
 from app.services.ruleset_service import RuleSetService
 from app.services.rule_packs import get_rule_pack
@@ -166,5 +164,25 @@ def main() -> None:
     sys.stdout.flush()
 
 
-if __name__ == "__main__":
-    main()
+    # Usuário administrador padrão
+    admin_email = "admin@oraculo.app"
+    if not session.query(User).filter(User.email == admin_email).first():
+        admin_user = User(
+            email=admin_email,
+            first_name="Admin",
+            last_name="Oráculo",
+            password_hash=get_password_hash("admin123"),
+            is_superuser=True,
+        )
+        session.add(admin_user)
+
+    page_service = PageService(session)
+    page_service.get_or_create(
+        "home",
+        default_title="Oráculo ICMS",
+        default_content=(
+            "Centralize a gestão tributária da sua empresa com automações e auditorias em tempo real."
+        ),
+    )
+
+    session.commit()

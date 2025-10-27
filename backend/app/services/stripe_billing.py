@@ -13,6 +13,7 @@ from app.models.org_setting import OrgSetting
 from app.models.plan import Plan
 from app.models.subscription import Subscription
 from app.services.plan_catalog import PLAN_CATALOG
+from app.services.app_settings import AppSettingsService
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,24 @@ class StripeBillingService:
 
     def __init__(self, session: Session) -> None:
         self.session = session
-        if not settings.stripe_secret_key:
+        self._app_settings = AppSettingsService(session)
+        stored = self._app_settings.get_many(
+            [
+                "stripe_public_key",
+                "stripe_secret_key",
+                "stripe_webhook_secret",
+            ]
+        )
+        self._public_key = stored.get("stripe_public_key") or settings.stripe_public_key
+        self._secret_key = stored.get("stripe_secret_key") or settings.stripe_secret_key
+        self._webhook_secret = (
+            stored.get("stripe_webhook_secret") or settings.stripe_webhook_secret
+        )
+        if not self._secret_key:
             raise StripeConfigurationError(
-                "Configuração Stripe ausente. Defina STRIPE_SECRET_KEY."
+                "Configuração Stripe ausente. Defina as credenciais da Stripe."
             )
-        stripe.api_key = settings.stripe_secret_key
+        stripe.api_key = self._secret_key
 
     # ------------------------------------------------------------------
     def sync_plan_catalog(self) -> None:
@@ -122,14 +136,14 @@ class StripeBillingService:
 
     # ------------------------------------------------------------------
     def parse_webhook(self, payload: bytes, signature: str | None) -> dict[str, Any]:
-        if not settings.stripe_webhook_secret:
+        if not self._webhook_secret:
             raise StripeConfigurationError(
                 "Webhook secret ausente. Defina STRIPE_WEBHOOK_SECRET."
             )
         return stripe.Webhook.construct_event(
             payload,
             signature,
-            settings.stripe_webhook_secret,
+            self._webhook_secret,
         )
 
     # ------------------------------------------------------------------

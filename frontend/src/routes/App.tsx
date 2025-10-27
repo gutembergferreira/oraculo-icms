@@ -3,7 +3,11 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { RequireAdmin, RequireAuth } from "../components/RouteGuards";
 import Layout from "../layouts/AppLayout";
 import PublicLayout from "../layouts/PublicLayout";
+import AdminBillingPage from "../pages/AdminBillingPage";
 import AdminPage from "../pages/AdminPage";
+import AdminPlansPage from "../pages/AdminPlansPage";
+import AdminStripePage from "../pages/AdminStripePage";
+import AdminUsersPage from "../pages/AdminUsersPage";
 import AuditPage from "../pages/AuditPage";
 import BillingPage from "../pages/BillingPage";
 import DashboardPage from "../pages/DashboardPage";
@@ -29,6 +33,10 @@ const App = () => {
           <Route path="/rules" element={<RulesPage />} />
           <Route element={<RequireAdmin />}>
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/plans" element={<AdminPlansPage />} />
+            <Route path="/admin/stripe" element={<AdminStripePage />} />
+            <Route path="/admin/billing" element={<AdminBillingPage />} />
           </Route>
         </Route>
       </Route>

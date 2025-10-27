@@ -23,7 +23,7 @@ _parser = RuleDSLParser()
 
 
 def _ensure_org_access(user: User, org_id: int) -> None:
-    if not any(role.org_id == org_id for role in user.roles):
+    if not any(role.org_id == org_id for role in user.org_roles):
         raise HTTPException(status_code=403, detail="Acesso negado à organização solicitada.")
 
 
@@ -85,13 +85,22 @@ def upsert_global_baseline(
     db.commit()
     return _serialize_ruleset(ruleset)
 
+from app.schemas import RulePackRead  # ajuste o import conforme seu projeto
 
+def _to_read(pack) -> RulePackRead:
+    return RulePackRead(
+        code=pack.slug,
+        name=pack.name,
+        version=pack.version,
+        description=getattr(pack, "description", None),
+        yaml=pack.yaml,
+    )
 @router.get("/catalog", response_model=list[RulePackRead])
 def list_rule_packs(
     current_user: User = Depends(get_current_user),
 ) -> list[RulePackRead]:
     del current_user
-    return [RulePackRead(**pack.__dict__) for pack in iter_rule_packs()]
+    return [_to_read(p) for p in iter_rule_packs()]
 
 
 @router.get("/orgs/{org_id}", response_model=RuleEditorPayload)

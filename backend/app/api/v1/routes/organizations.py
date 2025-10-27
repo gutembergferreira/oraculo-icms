@@ -17,7 +17,7 @@ def list_user_orgs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db_session),
 ) -> list[Organization]:
-    org_ids = [role.org_id for role in current_user.roles]
+    org_ids = [role.org_id for role in current_user.org_roles]
     return db.query(Organization).filter(Organization.id.in_(org_ids)).all()
 
 

@@ -28,5 +28,5 @@ RUN poetry install --no-interaction --no-ansi
 ENV PYTHONPATH=/srv
 
 # 5) rode apontando explicitamente o diretório
-CMD ["sh","-lc","alembic upgrade head && uvicorn --app-dir /srv app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh","-lc","alembic upgrade head && python -m app.db.seeds && uvicorn --app-dir /srv/app app.main:app --host 0.0.0.0 --port 8000"]
 

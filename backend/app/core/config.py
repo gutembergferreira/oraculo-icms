@@ -26,10 +26,11 @@ class Settings(BaseSettings):
     frontend_url: Optional[AnyHttpUrl] = Field(default=None, alias="FRONTEND_URL")
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
-    allowed_origins: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: List[str] = Field(default_factory=list, alias="BACKEND_CORS_ORIGINS")
+    ALLOWED_ORIGINS: List[str] = Field(default_factory=list, alias="ALLOWED_ORIGINS")
 
-    @field_validator("BACKEND_CORS_ORIGINS", "allowed_origins", mode="before")
+
+    @field_validator("BACKEND_CORS_ORIGINS", "ALLOWED_ORIGINS", mode="before")
     @classmethod
     def _parse_origins(cls, v):
         if v is None or v == "":
@@ -109,3 +110,13 @@ def get_settings() -> Settings:
     return Settings()
 
 settings = get_settings()
+
+
+def cors_origins() -> list[str]:
+    # prioriza ALLOWED_ORIGINS; senão usa BACKEND_CORS_ORIGINS; senão fallback
+    raw = settings.ALLOWED_ORIGINS or settings.BACKEND_CORS_ORIGINS or [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    # **remove barra final**
+    return [o.rstrip("/") for o in raw]

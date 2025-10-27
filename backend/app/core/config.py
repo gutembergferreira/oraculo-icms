@@ -78,6 +78,22 @@ class Settings(BaseSettings):
     # Storage
     storage_backend: str = Field(default="local", alias="STORAGE_BACKEND")
     local_storage_path: str = Field(default="/data/storage", alias="LOCAL_STORAGE_PATH")
+    s3_endpoint_url: Optional[AnyHttpUrl] = Field(default=None, alias="S3_ENDPOINT_URL")
+    s3_access_key: Optional[str] = Field(default=None, alias="S3_ACCESS_KEY")
+    s3_secret_key: Optional[str] = Field(default=None, alias="S3_SECRET_KEY")
+    s3_region: Optional[str] = Field(default=None, alias="S3_REGION")
+    s3_bucket: Optional[str] = Field(default=None, alias="S3_BUCKET")
+    s3_secure: bool = Field(default=True, alias="S3_SECURE")
+
+    # SSO
+    sso_enabled: bool = Field(default=False, alias="SSO_ENABLED")
+    sso_provider_name: str = Field(default="SSO", alias="SSO_PROVIDER_NAME")
+    sso_client_id: Optional[str] = Field(default=None, alias="SSO_CLIENT_ID")
+    sso_client_secret: Optional[str] = Field(default=None, alias="SSO_CLIENT_SECRET")
+    sso_authorize_url: Optional[AnyHttpUrl] = Field(default=None, alias="SSO_AUTHORIZE_URL")
+    sso_token_url: Optional[AnyHttpUrl] = Field(default=None, alias="SSO_TOKEN_URL")
+    sso_userinfo_url: Optional[AnyHttpUrl] = Field(default=None, alias="SSO_USERINFO_URL")
+    sso_redirect_uri: Optional[AnyHttpUrl] = Field(default=None, alias="SSO_REDIRECT_URI")
 
     # Segurança / Observabilidade / Celery / Features
     fernet_key: Optional[str] = Field(default=None, alias="FERNET_KEY")

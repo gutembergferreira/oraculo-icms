@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import zipfile
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 from celery import shared_task
@@ -13,6 +14,7 @@ from app.models.file import File
 from app.models.invoice import Invoice
 from app.models.org_setting import OrgSetting
 from app.services.invoice_ingestion import InvoiceIngestor
+from app.services.storage import get_storage_backend
 from app.services.zfm_calculator import ZFMAuditCalculator
 from app.services.audit_summary import AuditSummaryBuilder
 from app.services.audit_report import AuditReportBuilder
@@ -42,9 +44,8 @@ def parse_xml_batch(
         if not raw_file:
             raise ValueError('Arquivo de origem não encontrado')
 
-        archive_path = Path(zip_path)
-        if not archive_path.exists():
-            raise FileNotFoundError(f'ZIP não encontrado: {zip_path}')
+        storage = get_storage_backend(raw_file.storage_backend)
+        zip_bytes = storage.read(path=zip_path)
 
         audit_run.status = AuditStatus.RUNNING
         audit_run.started_at = datetime.utcnow()
@@ -57,7 +58,7 @@ def parse_xml_batch(
         processed = 0
         total_findings = 0
 
-        with zipfile.ZipFile(archive_path) as archive:
+        with zipfile.ZipFile(BytesIO(zip_bytes)) as archive:
             for info in archive.infolist():
                 if info.is_dir() or not info.filename.lower().endswith('.xml'):
                     continue

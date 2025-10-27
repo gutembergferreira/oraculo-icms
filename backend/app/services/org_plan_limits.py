@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
 from app.models.org_setting import OrgSetting
+from app.models.organization import Organization
 
 
 @dataclass(slots=True)
@@ -67,10 +69,37 @@ class OrgPlanLimiter:
         if for_update:
             query = query.with_for_update()
         setting = query.one_or_none()
-        if not setting:
+        if setting:
+            return setting
+
+        org = self.session.get(Organization, org_id)
+        if not org:
             raise PlanLimitError(
-                "org_settings_missing", "Configurações da organização não encontradas"
+                "org_not_found", "Organização não encontrada para verificação de limites"
             )
+
+        plan = None
+        if org.subscriptions:
+            for subscription in sorted(
+                org.subscriptions,
+                key=lambda sub: sub.created_at or datetime.min,
+                reverse=True,
+            ):
+                if getattr(subscription, "plan", None):
+                    plan = subscription.plan
+                    break
+
+        setting = OrgSetting(org_id=org_id)
+        if plan:
+            setting.current_plan_id = plan.id
+            setting.plan_limits = plan.limits or {}
+            setting.plan_features = plan.features or {}
+            setting.flags = {
+                **{key: bool(value) for key, value in (plan.features or {}).items()},
+                "plan_code": plan.code,
+            }
+        self.session.add(setting)
+        self.session.flush()
         return setting
 
     @staticmethod

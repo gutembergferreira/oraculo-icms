@@ -13,6 +13,9 @@ from app.models.audit_run import AuditRun
 from app.models.audit_finding import AuditFinding
 from app.models.suggestion import Suggestion
 from app.models.audit_log import AuditLog
+from app.models.api_key import ApiKey
+from app.models.page import Page
+from app.models.app_setting import AppSetting
 
 __all__ = [
     "Organization",
@@ -30,4 +33,7 @@ __all__ = [
     "AuditFinding",
     "Suggestion",
     "AuditLog",
+    "ApiKey",
+    "Page",
+    "AppSetting",
 ]
